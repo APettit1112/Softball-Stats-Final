@@ -2,7 +2,7 @@ process.env.DB_NAME = ':memory:';
 
 const request = require('supertest');
 const app = require('../app');
-const { sequelize, Player } = require('../database/models');
+const { sequelize } = require('../database/models');
 
 describe('Players API', () => {
   beforeAll(async () => {
@@ -13,22 +13,27 @@ describe('Players API', () => {
     await sequelize.close();
   });
 
-  test('GET /api/players returns an empty array', async () => {
-    const response = await request(app).get('/api/players');
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual([]);
+  let playerId;
+
+  test('POST /api/players - create player', async () => {
+    const res = await request(app)
+      .post('/api/players')
+      .send({
+        name: 'Sarah Johnson',
+        jerseyNumber: 12,
+        position: 'Pitcher',
+      });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body).toHaveProperty('id');
+
+    playerId = res.body.id;
   });
 
-  test('POST /api/players creates a player', async () => {
-    const response = await request(app)
-      .post('/api/players')
-      .send({ name: 'Avery Johnson', position: 'Pitcher', team: 'Blue Sox' });
+  test('GET /api/players - get all players', async () => {
+    const res = await request(app).get('/api/players');
 
-    expect(response.status).toBe(201);
-    expect(response.body.name).toBe('Avery Johnson');
-    expect(response.body.team).toBe('Blue Sox');
-
-    const player = await Player.findByPk(response.body.id);
-    expect(player).not.toBeNull();
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
   });
 });

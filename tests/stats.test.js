@@ -7,7 +7,7 @@ const { sequelize, Player, Game } = require('../database/models');
 describe('Stats API', () => {
   beforeAll(async () => {
     await sequelize.sync({ force: true });
-    await Player.create({ name: 'Avery Johnson', position: 'Pitcher', team: 'Blue Sox' });
+    await Player.create({ name: 'Avery Johnson', position: 'Pitcher' });
     await Game.create({ date: '2026-04-13', opponent: 'Green Giants', location: 'Home Stadium' });
   });
 

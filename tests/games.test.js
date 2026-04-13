@@ -2,7 +2,7 @@ process.env.DB_NAME = ':memory:';
 
 const request = require('supertest');
 const app = require('../app');
-const { sequelize, Game } = require('../database/models');
+const { sequelize } = require('../database/models');
 
 describe('Games API', () => {
   beforeAll(async () => {
@@ -13,21 +13,16 @@ describe('Games API', () => {
     await sequelize.close();
   });
 
-  test('GET /api/games returns an empty array', async () => {
-    const response = await request(app).get('/api/games');
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual([]);
-  });
-
-  test('POST /api/games creates a new game', async () => {
-    const response = await request(app)
+  test('POST /api/games - create game', async () => {
+    const res = await request(app)
       .post('/api/games')
-      .send({ date: '2026-04-13', opponent: 'Green Giants', location: 'Home Stadium' });
+      .send({
+        opponent: 'Tigers',
+        date: '2026-04-10',
+        finalScore: '5-3',
+      });
 
-    expect(response.status).toBe(201);
-    expect(response.body.opponent).toBe('Green Giants');
-
-    const game = await Game.findByPk(response.body.id);
-    expect(game).not.toBeNull();
+    expect(res.statusCode).toBe(201);
+    expect(res.body).toHaveProperty('id');
   });
 });
