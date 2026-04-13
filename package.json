@@ -7,7 +7,7 @@
     "start": "node server.js",
     "setup": "node database/db.js",
     "seed": "node database/seed.js",
-    "test": "jest"
+    "test": "jest --runInBand"
   },
   "repository": {
     "type": "git",
