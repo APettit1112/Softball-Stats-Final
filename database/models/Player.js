@@ -11,11 +11,11 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    position: {
-      type: DataTypes.STRING,
+    jerseyNumber: {
+      type: DataTypes.INTEGER,
       allowNull: true,
     },
-    team: {
+    position: {
       type: DataTypes.STRING,
       allowNull: true,
     },

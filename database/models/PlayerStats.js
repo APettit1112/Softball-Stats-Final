@@ -23,11 +23,11 @@ module.exports = (sequelize) => {
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
-    rbis: {
+    RBIs: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
-    atBats: {
+    errors: {
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },

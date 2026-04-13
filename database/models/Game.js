@@ -7,15 +7,15 @@ module.exports = (sequelize) => {
       primaryKey: true,
       autoIncrement: true,
     },
-    date: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
-    },
     opponent: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    location: {
+    date: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
+    finalScore: {
       type: DataTypes.STRING,
       allowNull: true,
     },
