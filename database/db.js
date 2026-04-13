@@ -12,4 +12,18 @@ const sequelize = new Sequelize({
   logging: false,
 });
 
+if (require.main === module) {
+  (async () => {
+    try {
+      await sequelize.authenticate();
+      await sequelize.sync();
+      console.log('✅ Database setup complete');
+      process.exit(0);
+    } catch (error) {
+      console.error('❌ Database setup failed:', error);
+      process.exit(1);
+    }
+  })();
+}
+
 module.exports = sequelize;
