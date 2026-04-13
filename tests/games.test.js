@@ -13,15 +13,15 @@ describe('Games API', () => {
     await sequelize.close();
   });
 
-  test('GET /games returns an empty array', async () => {
-    const response = await request(app).get('/games');
+  test('GET /api/games returns an empty array', async () => {
+    const response = await request(app).get('/api/games');
     expect(response.status).toBe(200);
     expect(response.body).toEqual([]);
   });
 
-  test('POST /games creates a new game', async () => {
+  test('POST /api/games creates a new game', async () => {
     const response = await request(app)
-      .post('/games')
+      .post('/api/games')
       .send({ date: '2026-04-13', opponent: 'Green Giants', location: 'Home Stadium' });
 
     expect(response.status).toBe(201);

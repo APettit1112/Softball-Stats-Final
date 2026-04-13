@@ -13,15 +13,15 @@ describe('Players API', () => {
     await sequelize.close();
   });
 
-  test('GET /players returns an empty array', async () => {
-    const response = await request(app).get('/players');
+  test('GET /api/players returns an empty array', async () => {
+    const response = await request(app).get('/api/players');
     expect(response.status).toBe(200);
     expect(response.body).toEqual([]);
   });
 
-  test('POST /players creates a player', async () => {
+  test('POST /api/players creates a player', async () => {
     const response = await request(app)
-      .post('/players')
+      .post('/api/players')
       .send({ name: 'Avery Johnson', position: 'Pitcher', team: 'Blue Sox' });
 
     expect(response.status).toBe(201);

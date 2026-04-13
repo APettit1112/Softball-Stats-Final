@@ -1,32 +1,63 @@
 const express = require('express');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const { User } = require('../database/models');
 const router = express.Router();
 
-router.get('/', async (req, res, next) => {
-  try {
-    const users = await User.findAll();
-    res.json(users);
-  } catch (error) {
-    next(error);
-  }
-});
+const jwtSecret = process.env.JWT_SECRET || 'secret';
+const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '24h';
 
-router.get('/:id', async (req, res, next) => {
+router.post('/register', async (req, res, next) => {
   try {
-    const user = await User.findByPk(req.params.id);
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
+    const { username, email, password, role } = req.body;
+    const existing = await User.findOne({
+      where: { username },
+    });
+
+    if (existing) {
+      return res.status(409).json({ error: 'Username already taken' });
     }
-    res.json(user);
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      username,
+      email,
+      password: hashedPassword,
+      role: role || 'user',
+    });
+
+    res.status(201).json({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    });
   } catch (error) {
     next(error);
   }
 });
 
-router.post('/', async (req, res, next) => {
+router.post('/login', async (req, res, next) => {
   try {
-    const user = await User.create(req.body);
-    res.status(201).json(user);
+    const { username, password } = req.body;
+    const user = await User.findOne({ where: { username } });
+
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role },
+      jwtSecret,
+      { expiresIn: jwtExpiresIn }
+    );
+
+    res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role } });
   } catch (error) {
     next(error);
   }

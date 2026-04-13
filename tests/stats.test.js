@@ -20,7 +20,7 @@ describe('Stats API', () => {
     const game = await Game.findOne();
 
     const response = await request(app)
-      .post('/stats')
+      .post('/api/stats')
       .send({
         playerId: player.id,
         gameId: game.id,

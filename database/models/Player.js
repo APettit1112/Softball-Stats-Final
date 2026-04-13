@@ -19,5 +19,9 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true,
     },
+    team: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
   });
 };

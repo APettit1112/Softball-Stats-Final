@@ -13,10 +13,10 @@ const app = express();
 app.use(express.json());
 app.use(logger);
 
-app.use('/users', usersRoutes);
-app.use('/players', playersRoutes);
-app.use('/games', gamesRoutes);
-app.use('/stats', statsRoutes);
+app.use('/api', usersRoutes);
+app.use('/api/players', playersRoutes);
+app.use('/api/games', gamesRoutes);
+app.use('/api/stats', statsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: 'Not Found' });
