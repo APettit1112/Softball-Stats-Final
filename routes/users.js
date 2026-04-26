@@ -16,8 +16,7 @@ const { requireRole } = require('../middleware/authorization');
 const router = express.Router();
 
 const jwtSecret = process.env.JWT_SECRET || 'secret';
-const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '24h');
-
+const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '24h';
 /**
  * POST /api/v1/auth/register
  * Register a new user
