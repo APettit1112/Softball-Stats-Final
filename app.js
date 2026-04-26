@@ -18,10 +18,11 @@ app.use(cors());
 app.use(logger);
 
 // ============================================
-// API ROUTES (v1)
+// API ROUTES
 // ============================================
 
-app.use('/api/v1', apiRoutes);
+// CHANGE: remove /v1 so tests match /api/players, /api/games, etc.
+app.use('/api', apiRoutes);
 
 // ============================================
 // HEALTH CHECK ENDPOINT

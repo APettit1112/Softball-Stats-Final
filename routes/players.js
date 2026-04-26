@@ -108,6 +108,10 @@ router.post('/', async (req, res, next) => {
       name: name.trim(),
       position: position.trim(),
       number: playerNumber,
+      jerseyNumber: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+}
     });
 
     res.status(201).json({
