@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const AppError = require('../utils/AppError');
 
 const jwtSecret = process.env.JWT_SECRET || 'secret';
 
@@ -10,7 +11,7 @@ const verifyToken = (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1];
 
   if (!token) {
-    return res.status(401).json({ error: 'No token provided' });
+    return next(new AppError('No token provided. Please authenticate.', 401, 'NO_TOKEN'));
   }
 
   try {
@@ -18,7 +19,10 @@ const verifyToken = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (error) {
-    return res.status(401).json({ error: 'Invalid or expired token' });
+    if (error.name === 'TokenExpiredError') {
+      return next(new AppError('Token has expired', 401, 'TOKEN_EXPIRED'));
+    }
+    return next(new AppError('Invalid token', 401, 'INVALID_TOKEN'));
   }
 };
 
@@ -29,7 +33,9 @@ const verifyToken = (req, res, next) => {
 const requireRole = (role) => {
   return (req, res, next) => {
     if (!req.user || req.user.role !== role) {
-      return res.status(403).json({ error: `Access denied. ${role} role required.` });
+      return next(
+        new AppError(`Access denied. ${role} role required.`, 403, 'INSUFFICIENT_PERMISSIONS')
+      );
     }
     next();
   };

@@ -1,5 +1,7 @@
 const express = require('express');
 const { Game } = require('../database/models');
+const AppError = require('../utils/AppError');
+const { validateResourceExists } = require('../utils/validation');
 const router = express.Router();
 
 /**
@@ -9,7 +11,11 @@ const router = express.Router();
 router.get('/', async (req, res, next) => {
   try {
     const games = await Game.findAll();
-    res.json(games);
+    res.json({
+      success: true,
+      data: games,
+      count: games.length,
+    });
   } catch (error) {
     next(error);
   }
@@ -22,7 +28,11 @@ router.get('/', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const game = await Game.create(req.body);
-    res.status(201).json(game);
+    res.status(201).json({
+      success: true,
+      message: 'Game created successfully',
+      data: game,
+    });
   } catch (error) {
     next(error);
   }
@@ -35,11 +45,14 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const game = await Game.findByPk(req.params.id);
-    if (!game) {
-      return res.status(404).json({ error: 'Game not found' });
-    }
+    validateResourceExists(game, 'Game');
+
     await game.update(req.body);
-    res.json(game);
+    res.json({
+      success: true,
+      message: 'Game updated successfully',
+      data: game,
+    });
   } catch (error) {
     next(error);
   }
@@ -52,11 +65,14 @@ router.put('/:id', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
   try {
     const game = await Game.findByPk(req.params.id);
-    if (!game) {
-      return res.status(404).json({ error: 'Game not found' });
-    }
+    validateResourceExists(game, 'Game');
+
     await game.destroy();
-    res.json({ message: 'Game deleted successfully' });
+    res.json({
+      success: true,
+      message: 'Game deleted successfully',
+      data: { id: req.params.id },
+    });
   } catch (error) {
     next(error);
   }

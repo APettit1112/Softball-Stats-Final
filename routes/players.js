@@ -1,5 +1,7 @@
 const express = require('express');
 const { Player } = require('../database/models');
+const AppError = require('../utils/AppError');
+const { validateResourceExists } = require('../utils/validation');
 const router = express.Router();
 
 /**
@@ -9,7 +11,11 @@ const router = express.Router();
 router.get('/', async (req, res, next) => {
   try {
     const players = await Player.findAll();
-    res.json(players);
+    res.json({
+      success: true,
+      data: players,
+      count: players.length,
+    });
   } catch (error) {
     next(error);
   }
@@ -22,10 +28,12 @@ router.get('/', async (req, res, next) => {
 router.get('/:id', async (req, res, next) => {
   try {
     const player = await Player.findByPk(req.params.id);
-    if (!player) {
-      return res.status(404).json({ error: 'Player not found' });
-    }
-    res.json(player);
+    validateResourceExists(player, 'Player');
+
+    res.json({
+      success: true,
+      data: player,
+    });
   } catch (error) {
     next(error);
   }
@@ -38,7 +46,11 @@ router.get('/:id', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const player = await Player.create(req.body);
-    res.status(201).json(player);
+    res.status(201).json({
+      success: true,
+      message: 'Player created successfully',
+      data: player,
+    });
   } catch (error) {
     next(error);
   }
@@ -51,11 +63,14 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const player = await Player.findByPk(req.params.id);
-    if (!player) {
-      return res.status(404).json({ error: 'Player not found' });
-    }
+    validateResourceExists(player, 'Player');
+
     await player.update(req.body);
-    res.json(player);
+    res.json({
+      success: true,
+      message: 'Player updated successfully',
+      data: player,
+    });
   } catch (error) {
     next(error);
   }
@@ -68,11 +83,14 @@ router.put('/:id', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
   try {
     const player = await Player.findByPk(req.params.id);
-    if (!player) {
-      return res.status(404).json({ error: 'Player not found' });
-    }
+    validateResourceExists(player, 'Player');
+
     await player.destroy();
-    res.json({ message: 'Player deleted successfully' });
+    res.json({
+      success: true,
+      message: 'Player deleted successfully',
+      data: { id: req.params.id },
+    });
   } catch (error) {
     next(error);
   }

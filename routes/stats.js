@@ -1,5 +1,7 @@
 const express = require('express');
 const { PlayerStats, Player, Game } = require('../database/models');
+const AppError = require('../utils/AppError');
+const { validateResourceExists } = require('../utils/validation');
 const router = express.Router();
 
 /**
@@ -11,7 +13,11 @@ router.get('/', async (req, res, next) => {
     const stats = await PlayerStats.findAll({
       include: [Player, Game],
     });
-    res.json(stats);
+    res.json({
+      success: true,
+      data: stats,
+      count: stats.length,
+    });
   } catch (error) {
     next(error);
   }
@@ -27,7 +33,16 @@ router.get('/:playerId', async (req, res, next) => {
       where: { playerId: req.params.playerId },
       include: [Player, Game],
     });
-    res.json(stats);
+
+    if (stats.length === 0) {
+      throw new AppError('No statistics found for this player', 404, 'NO_STATS_FOUND');
+    }
+
+    res.json({
+      success: true,
+      data: stats,
+      count: stats.length,
+    });
   } catch (error) {
     next(error);
   }
@@ -40,7 +55,11 @@ router.get('/:playerId', async (req, res, next) => {
 router.post('/', async (req, res, next) => {
   try {
     const stat = await PlayerStats.create(req.body);
-    res.status(201).json(stat);
+    res.status(201).json({
+      success: true,
+      message: 'Stat record created successfully',
+      data: stat,
+    });
   } catch (error) {
     next(error);
   }
@@ -53,11 +72,14 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const stat = await PlayerStats.findByPk(req.params.id);
-    if (!stat) {
-      return res.status(404).json({ error: 'Stat record not found' });
-    }
+    validateResourceExists(stat, 'Stat record');
+
     await stat.update(req.body);
-    res.json(stat);
+    res.json({
+      success: true,
+      message: 'Stat record updated successfully',
+      data: stat,
+    });
   } catch (error) {
     next(error);
   }
@@ -70,11 +92,14 @@ router.put('/:id', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
   try {
     const stat = await PlayerStats.findByPk(req.params.id);
-    if (!stat) {
-      return res.status(404).json({ error: 'Stat record not found' });
-    }
+    validateResourceExists(stat, 'Stat record');
+
     await stat.destroy();
-    res.json({ message: 'Stat record deleted successfully' });
+    res.json({
+      success: true,
+      message: 'Stat record deleted successfully',
+      data: { id: req.params.id },
+    });
   } catch (error) {
     next(error);
   }
