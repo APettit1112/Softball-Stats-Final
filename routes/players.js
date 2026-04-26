@@ -9,6 +9,7 @@ const {
   buildSearchFilter,
   parseSortParams,
 } = require('../utils/pagination');
+
 const router = express.Router();
 
 /**
@@ -21,13 +22,12 @@ router.get('/', async (req, res, next) => {
     const { search, sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
     const { page, limit, offset } = parsePaginationParams(req.query);
 
-    // Build search filter
     let where = {};
+
     if (search) {
       where = buildSearchFilter(search, ['name', 'position'], Sequelize);
     }
 
-    // Get count and data
     const { count, rows } = await Player.findAndCountAll({
       where,
       offset,
@@ -47,7 +47,6 @@ router.get('/', async (req, res, next) => {
  */
 router.get('/:id', async (req, res, next) => {
   try {
-    // Validate ID format
     validateId(req.params.id, 'Player ID');
 
     const player = await Player.findByPk(req.params.id);
@@ -71,7 +70,6 @@ router.post('/', async (req, res, next) => {
   try {
     const { name, position, number } = req.body;
 
-    // Validate required fields
     if (!name || !position || number === undefined) {
       throw new AppError(
         'Missing required fields: name, position, number',
@@ -80,20 +78,30 @@ router.post('/', async (req, res, next) => {
       );
     }
 
-    // Validate name is not empty
     if (typeof name !== 'string' || name.trim() === '') {
-      throw new AppError('Player name must be a non-empty string', 400, 'VALIDATION_ERROR');
+      throw new AppError(
+        'Player name must be a non-empty string',
+        400,
+        'VALIDATION_ERROR'
+      );
     }
 
-    // Validate position is not empty
     if (typeof position !== 'string' || position.trim() === '') {
-      throw new AppError('Position must be a non-empty string', 400, 'VALIDATION_ERROR');
+      throw new AppError(
+        'Position must be a non-empty string',
+        400,
+        'VALIDATION_ERROR'
+      );
     }
 
-    // Validate number is a valid positive integer
     const playerNumber = parseInt(number, 10);
+
     if (isNaN(playerNumber) || playerNumber <= 0 || playerNumber > 999) {
-      throw new AppError('Player number must be a positive integer between 1 and 999', 400, 'VALIDATION_ERROR');
+      throw new AppError(
+        'Player number must be a positive integer between 1 and 999',
+        400,
+        'VALIDATION_ERROR'
+      );
     }
 
     const player = await Player.create({
@@ -118,7 +126,6 @@ router.post('/', async (req, res, next) => {
  */
 router.put('/:id', async (req, res, next) => {
   try {
-    // Validate ID format
     validateId(req.params.id, 'Player ID');
 
     const player = await Player.findByPk(req.params.id);
@@ -126,21 +133,35 @@ router.put('/:id', async (req, res, next) => {
 
     const { name, position, number } = req.body;
 
-    // Validate fields if provided
+    const updateData = {};
+
     if (name !== undefined) {
       if (typeof name !== 'string' || name.trim() === '') {
-        throw new AppError('Player name must be a non-empty string', 400, 'VALIDATION_ERROR');
+        throw new AppError(
+          'Player name must be a non-empty string',
+          400,
+          'VALIDATION_ERROR'
+        );
       }
+
+      updateData.name = name.trim();
     }
 
     if (position !== undefined) {
       if (typeof position !== 'string' || position.trim() === '') {
-        throw new AppError('Position must be a non-empty string', 400, 'VALIDATION_ERROR');
+        throw new AppError(
+          'Position must be a non-empty string',
+          400,
+          'VALIDATION_ERROR'
+        );
       }
+
+      updateData.position = position.trim();
     }
 
     if (number !== undefined) {
       const playerNumber = parseInt(number, 10);
+
       if (isNaN(playerNumber) || playerNumber <= 0 || playerNumber > 999) {
         throw new AppError(
           'Player number must be a positive integer between 1 and 999',
@@ -148,9 +169,12 @@ router.put('/:id', async (req, res, next) => {
           'VALIDATION_ERROR'
         );
       }
+
+      updateData.number = playerNumber;
     }
 
-    await player.update(req.body);
+    await player.update(updateData);
+
     res.json({
       success: true,
       message: 'Player updated successfully',
@@ -167,13 +191,13 @@ router.put('/:id', async (req, res, next) => {
  */
 router.delete('/:id', async (req, res, next) => {
   try {
-    // Validate ID format
     validateId(req.params.id, 'Player ID');
 
     const player = await Player.findByPk(req.params.id);
     validateResourceExists(player, 'Player');
 
     await player.destroy();
+
     res.json({
       success: true,
       message: 'Player deleted successfully',

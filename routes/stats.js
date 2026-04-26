@@ -1,27 +1,38 @@
 const express = require('express');
 const { PlayerStats, Player, Game } = require('../database/models');
+const { Sequelize } = require('sequelize');
 const AppError = require('../utils/AppError');
 const {
   validateResourceExists,
   validateId,
   validateNonNegativeNumber,
 } = require('../utils/validation');
+const {
+  parsePaginationParams,
+  formatPaginatedResponse,
+  parseSortParams,
+} = require('../utils/pagination');
+
 const router = express.Router();
 
 /**
  * GET /api/v1/stats
  * Retrieve all player statistics with related player and game data
+ * Query params: page, limit, sortBy, sortOrder
  */
 router.get('/', async (req, res, next) => {
   try {
-    const stats = await PlayerStats.findAll({
+    const { sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
+    const { page, limit, offset } = parsePaginationParams(req.query);
+
+    const { count, rows } = await PlayerStats.findAndCountAll({
       include: [Player, Game],
+      offset,
+      limit,
+      order: parseSortParams(sortBy, sortOrder),
     });
-    res.json({
-      success: true,
-      data: stats,
-      count: stats.length,
-    });
+
+    res.json(formatPaginatedResponse(rows, count, page, limit));
   } catch (error) {
     next(error);
   }
@@ -33,10 +44,8 @@ router.get('/', async (req, res, next) => {
  */
 router.get('/:playerId', async (req, res, next) => {
   try {
-    // Validate player ID format
     validateId(req.params.playerId, 'Player ID');
 
-    // Check if player exists
     const player = await Player.findByPk(req.params.playerId);
     if (!player) {
       throw new AppError('Player not found', 404, 'NOT_FOUND');
@@ -45,16 +54,44 @@ router.get('/:playerId', async (req, res, next) => {
     const stats = await PlayerStats.findAll({
       where: { playerId: req.params.playerId },
       include: [Player, Game],
+      order: [['createdAt', 'DESC']],
     });
 
     if (stats.length === 0) {
-      throw new AppError('No statistics found for this player', 404, 'NO_STATS_FOUND');
+      throw new AppError(
+        'No statistics found for this player',
+        404,
+        'NO_STATS_FOUND'
+      );
     }
 
     res.json({
       success: true,
       data: stats,
       count: stats.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/stats/record/:id
+ * Retrieve a specific stat record by ID
+ */
+router.get('/record/:id', async (req, res, next) => {
+  try {
+    validateId(req.params.id, 'Stat ID');
+
+    const stat = await PlayerStats.findByPk(req.params.id, {
+      include: [Player, Game],
+    });
+
+    validateResourceExists(stat, 'Stat record');
+
+    res.json({
+      success: true,
+      data: stat,
     });
   } catch (error) {
     next(error);
@@ -70,7 +107,6 @@ router.post('/', async (req, res, next) => {
   try {
     const { playerId, gameId, hits, runs, rbis, strikeouts } = req.body;
 
-    // Validate required fields
     if (playerId === undefined || gameId === undefined) {
       throw new AppError(
         'Missing required fields: playerId, gameId',
@@ -79,23 +115,19 @@ router.post('/', async (req, res, next) => {
       );
     }
 
-    // Validate IDs
     validateId(playerId, 'Player ID');
     validateId(gameId, 'Game ID');
 
-    // Check if player exists
     const player = await Player.findByPk(playerId);
     if (!player) {
       throw new AppError('Player not found', 404, 'NOT_FOUND');
     }
 
-    // Check if game exists
     const game = await Game.findByPk(gameId);
     if (!game) {
       throw new AppError('Game not found', 404, 'NOT_FOUND');
     }
 
-    // Validate numeric fields if provided
     if (hits !== undefined && hits !== null) {
       validateNonNegativeNumber(hits, 'Hits');
     }
@@ -137,7 +169,6 @@ router.post('/', async (req, res, next) => {
  */
 router.put('/:id', async (req, res, next) => {
   try {
-    // Validate stat ID format
     validateId(req.params.id, 'Stat ID');
 
     const stat = await PlayerStats.findByPk(req.params.id);
@@ -145,41 +176,52 @@ router.put('/:id', async (req, res, next) => {
 
     const { playerId, gameId, hits, runs, rbis, strikeouts } = req.body;
 
-    // Validate IDs if provided
+    const updateData = {};
+
     if (playerId !== undefined) {
       validateId(playerId, 'Player ID');
+
       const player = await Player.findByPk(playerId);
       if (!player) {
         throw new AppError('Player not found', 404, 'NOT_FOUND');
       }
+
+      updateData.playerId = playerId;
     }
 
     if (gameId !== undefined) {
       validateId(gameId, 'Game ID');
+
       const game = await Game.findByPk(gameId);
       if (!game) {
         throw new AppError('Game not found', 404, 'NOT_FOUND');
       }
+
+      updateData.gameId = gameId;
     }
 
-    // Validate numeric fields if provided
-    if (hits !== undefined && hits !== null) {
+    if (hits !== undefined) {
       validateNonNegativeNumber(hits, 'Hits');
+      updateData.hits = hits;
     }
 
-    if (runs !== undefined && runs !== null) {
+    if (runs !== undefined) {
       validateNonNegativeNumber(runs, 'Runs');
+      updateData.runs = runs;
     }
 
-    if (rbis !== undefined && rbis !== null) {
+    if (rbis !== undefined) {
       validateNonNegativeNumber(rbis, 'RBIs');
+      updateData.rbis = rbis;
     }
 
-    if (strikeouts !== undefined && strikeouts !== null) {
+    if (strikeouts !== undefined) {
       validateNonNegativeNumber(strikeouts, 'Strikeouts');
+      updateData.strikeouts = strikeouts;
     }
 
-    await stat.update(req.body);
+    await stat.update(updateData);
+
     res.json({
       success: true,
       message: 'Stat record updated successfully',
@@ -196,13 +238,13 @@ router.put('/:id', async (req, res, next) => {
  */
 router.delete('/:id', async (req, res, next) => {
   try {
-    // Validate stat ID format
     validateId(req.params.id, 'Stat ID');
 
     const stat = await PlayerStats.findByPk(req.params.id);
     validateResourceExists(stat, 'Stat record');
 
     await stat.destroy();
+
     res.json({
       success: true,
       message: 'Stat record deleted successfully',
