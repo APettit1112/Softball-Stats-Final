@@ -4,27 +4,46 @@ require('dotenv').config();
 
 const logger = require('./middleware/logger');
 const errorHandler = require('./middleware/errorHandler');
-const usersRoutes = require('./routes/users');
-const playersRoutes = require('./routes/players');
-const gamesRoutes = require('./routes/games');
-const statsRoutes = require('./routes/stats');
+const apiRoutes = require('./routes');
 
 const app = express();
 
+// ============================================
+// GLOBAL MIDDLEWARE
+// ============================================
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(logger);
 
-app.use('/api', usersRoutes);
-app.use('/api/players', playersRoutes);
-app.use('/api/games', gamesRoutes);
-app.use('/api/stats', statsRoutes);
+// ============================================
+// API ROUTES (v1)
+// ============================================
+
+app.use('/api/v1', apiRoutes);
+
+// ============================================
+// HEALTH CHECK ENDPOINT
+// ============================================
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'Server is running' });
+});
+
+// ============================================
+// 404 NOT FOUND HANDLER
+// ============================================
 
 app.use((req, res, next) => {
   const error = new Error('Not Found');
   error.status = 404;
   next(error);
 });
+
+// ============================================
+// ERROR HANDLER (must be last)
+// ============================================
 
 app.use(errorHandler);
 

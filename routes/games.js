@@ -2,6 +2,10 @@ const express = require('express');
 const { Game } = require('../database/models');
 const router = express.Router();
 
+/**
+ * GET /api/v1/games
+ * Retrieve all games
+ */
 router.get('/', async (req, res, next) => {
   try {
     const games = await Game.findAll();
@@ -11,6 +15,10 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/v1/games
+ * Create a new game
+ */
 router.post('/', async (req, res, next) => {
   try {
     const game = await Game.create(req.body);
@@ -20,6 +28,10 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+/**
+ * PUT /api/v1/games/:id
+ * Update a game
+ */
 router.put('/:id', async (req, res, next) => {
   try {
     const game = await Game.findByPk(req.params.id);
@@ -33,6 +45,10 @@ router.put('/:id', async (req, res, next) => {
   }
 });
 
+/**
+ * DELETE /api/v1/games/:id
+ * Delete a game
+ */
 router.delete('/:id', async (req, res, next) => {
   try {
     const game = await Game.findByPk(req.params.id);

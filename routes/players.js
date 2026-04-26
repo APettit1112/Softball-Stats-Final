@@ -2,6 +2,10 @@ const express = require('express');
 const { Player } = require('../database/models');
 const router = express.Router();
 
+/**
+ * GET /api/v1/players
+ * Retrieve all players
+ */
 router.get('/', async (req, res, next) => {
   try {
     const players = await Player.findAll();
@@ -11,6 +15,10 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+/**
+ * GET /api/v1/players/:id
+ * Retrieve a specific player by ID
+ */
 router.get('/:id', async (req, res, next) => {
   try {
     const player = await Player.findByPk(req.params.id);
@@ -23,6 +31,10 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/v1/players
+ * Create a new player
+ */
 router.post('/', async (req, res, next) => {
   try {
     const player = await Player.create(req.body);
@@ -32,6 +44,10 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+/**
+ * PUT /api/v1/players/:id
+ * Update a player
+ */
 router.put('/:id', async (req, res, next) => {
   try {
     const player = await Player.findByPk(req.params.id);
@@ -45,6 +61,10 @@ router.put('/:id', async (req, res, next) => {
   }
 });
 
+/**
+ * DELETE /api/v1/players/:id
+ * Delete a player
+ */
 router.delete('/:id', async (req, res, next) => {
   try {
     const player = await Player.findByPk(req.params.id);

@@ -7,9 +7,19 @@ const router = express.Router();
 const jwtSecret = process.env.JWT_SECRET || 'secret';
 const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '24h';
 
+/**
+ * POST /api/v1/auth/register
+ * Register a new user
+ */
 router.post('/register', async (req, res, next) => {
   try {
     const { username, email, password, role } = req.body;
+
+    // Validate required fields
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'Username, email, and password are required' });
+    }
+
     const existing = await User.findOne({
       where: { username },
     });
@@ -37,9 +47,19 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/v1/auth/login
+ * Login user and return JWT token
+ */
 router.post('/login', async (req, res, next) => {
   try {
     const { username, password } = req.body;
+
+    // Validate required fields
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+
     const user = await User.findOne({ where: { username } });
 
     if (!user) {
@@ -57,7 +77,15 @@ router.post('/login', async (req, res, next) => {
       { expiresIn: jwtExpiresIn }
     );
 
-    res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role } });
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (error) {
     next(error);
   }
