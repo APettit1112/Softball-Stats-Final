@@ -3,12 +3,15 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { User } = require('../database/models');
 const AppError = require('../utils/AppError');
+const { Sequelize } = require('sequelize');
 const {
   validateRequiredFields,
   validateNotEmpty,
   validateEmail,
   validatePasswordStrength,
+  validateId,
 } = require('../utils/validation');
+const { requireRole } = require('../middleware/authorization');
 const router = express.Router();
 
 const jwtSecret = process.env.JWT_SECRET || 'secret';
@@ -52,7 +55,7 @@ router.post('/register', async (req, res, next) => {
       username,
       email,
       password: hashedPassword,
-      role: role || 'user',
+      role: 'user', // Default to 'user' role on registration
     });
 
     res.status(201).json({
@@ -114,6 +117,192 @@ router.post('/login', async (req, res, next) => {
           role: user.role,
         },
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/users
+ * Get all users (admin only)
+ * Optional query params: page, limit, search
+ */
+router.get('/', requireRole('admin'), async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10, search } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    let where = {};
+    if (search) {
+      where = {
+        [Sequelize.Op.or]: [
+          { username: { [Sequelize.Op.like]: `%${search}%` } },
+          { email: { [Sequelize.Op.like]: `%${search}%` } },
+        ],
+      };
+    }
+
+    const { count, rows } = await User.findAndCountAll({
+      where,
+      attributes: ['id', 'username', 'email', 'role', 'createdAt'],
+      offset: parseInt(offset),
+      limit: parseInt(limit),
+      order: [['createdAt', 'DESC']],
+    });
+
+    res.json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(count / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/users/:id
+ * Get user by ID
+ * Users can only view their own profile, admins can view anyone
+ */
+router.get('/:id', async (req, res, next) => {
+  try {
+    validateId(req.params.id, 'User ID');
+
+    const userId = parseInt(req.params.id);
+    const isOwner = req.user.id === userId;
+    const isAdmin = req.user.role === 'admin';
+
+    // Check authorization
+    if (!isOwner && !isAdmin) {
+      throw new AppError(
+        'You can only view your own profile',
+        403,
+        'NOT_RESOURCE_OWNER'
+      );
+    }
+
+    const user = await User.findByPk(userId, {
+      attributes: ['id', 'username', 'email', 'role', 'createdAt'],
+    });
+
+    if (!user) {
+      throw new AppError('User not found', 404, 'NOT_FOUND');
+    }
+
+    res.json({
+      success: true,
+      data: user,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * PUT /api/v1/users/:id
+ * Update user
+ * Users can update their own profile (except role), admins can update anyone
+ */
+router.put('/:id', async (req, res, next) => {
+  try {
+    validateId(req.params.id, 'User ID');
+
+    const userId = parseInt(req.params.id);
+    const isOwner = req.user.id === userId;
+    const isAdmin = req.user.role === 'admin';
+
+    // Check authorization
+    if (!isOwner && !isAdmin) {
+      throw new AppError(
+        'You can only update your own profile',
+        403,
+        'NOT_RESOURCE_OWNER'
+      );
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new AppError('User not found', 404, 'NOT_FOUND');
+    }
+
+    const { email, password, role } = req.body;
+
+    // Validate email if provided
+    if (email) {
+      validateEmail(email);
+      const existingEmail = await User.findOne({
+        where: { email, id: { [Sequelize.Op.ne]: userId } },
+      });
+      if (existingEmail) {
+        throw new AppError('Email already in use', 409, 'DUPLICATE_EMAIL');
+      }
+    }
+
+    // Validate password if provided
+    if (password) {
+      validatePasswordStrength(password);
+      user.password = await bcrypt.hash(password, 10);
+    }
+
+    // Only admins can change roles
+    if (role && !isAdmin) {
+      throw new AppError('Only admins can change user roles', 403, 'INSUFFICIENT_PERMISSIONS');
+    }
+
+    // Update allowed fields
+    if (email) user.email = email;
+    if (role && isAdmin) user.role = role;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'User updated successfully',
+      data: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /api/v1/users/:id
+ * Delete user (admin only)
+ */
+router.delete('/:id', requireRole('admin'), async (req, res, next) => {
+  try {
+    validateId(req.params.id, 'User ID');
+
+    const userId = parseInt(req.params.id);
+
+    // Prevent admin from deleting themselves
+    if (userId === req.user.id) {
+      throw new AppError('You cannot delete your own account', 400, 'CANNOT_DELETE_SELF');
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      throw new AppError('User not found', 404, 'NOT_FOUND');
+    }
+
+    await user.destroy();
+
+    res.json({
+      success: true,
+      message: 'User deleted successfully',
+      data: { id: userId },
     });
   } catch (error) {
     next(error);

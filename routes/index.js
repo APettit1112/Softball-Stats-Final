@@ -8,6 +8,7 @@ const playersRoutes = require('./players');
 const gamesRoutes = require('./games');
 const statsRoutes = require('./stats');
 const { verifyToken } = require('../middleware/auth');
+const { attachUserContext } = require('../middleware/authorization');
 
 const router = express.Router();
 
@@ -24,6 +25,12 @@ router.use('/auth', usersRoutes);
 
 // Apply verifyToken middleware to all routes below
 router.use(verifyToken);
+
+// Attach user context (permissions, role info)
+router.use(attachUserContext);
+
+// User management routes
+router.use('/users', usersRoutes);
 
 // Resource management routes
 router.use('/players', playersRoutes);

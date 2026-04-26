@@ -1,21 +1,41 @@
 const express = require('express');
 const { Player } = require('../database/models');
+const { Sequelize } = require('sequelize');
 const AppError = require('../utils/AppError');
 const { validateResourceExists, validateId } = require('../utils/validation');
+const {
+  parsePaginationParams,
+  formatPaginatedResponse,
+  buildSearchFilter,
+  parseSortParams,
+} = require('../utils/pagination');
 const router = express.Router();
 
 /**
  * GET /api/v1/players
- * Retrieve all players
+ * Retrieve all players with pagination, filtering, and sorting
+ * Query params: page, limit, search, sortBy, sortOrder
  */
 router.get('/', async (req, res, next) => {
   try {
-    const players = await Player.findAll();
-    res.json({
-      success: true,
-      data: players,
-      count: players.length,
+    const { search, sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
+    const { page, limit, offset } = parsePaginationParams(req.query);
+
+    // Build search filter
+    let where = {};
+    if (search) {
+      where = buildSearchFilter(search, ['name', 'position'], Sequelize);
+    }
+
+    // Get count and data
+    const { count, rows } = await Player.findAndCountAll({
+      where,
+      offset,
+      limit,
+      order: parseSortParams(sortBy, sortOrder),
     });
+
+    res.json(formatPaginatedResponse(rows, count, page, limit));
   } catch (error) {
     next(error);
   }
