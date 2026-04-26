@@ -3,7 +3,12 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { User } = require('../database/models');
 const AppError = require('../utils/AppError');
-const { validateRequiredFields, validateNotEmpty } = require('../utils/validation');
+const {
+  validateRequiredFields,
+  validateNotEmpty,
+  validateEmail,
+  validatePasswordStrength,
+} = require('../utils/validation');
 const router = express.Router();
 
 const jwtSecret = process.env.JWT_SECRET || 'secret';
@@ -23,10 +28,22 @@ router.post('/register', async (req, res, next) => {
     validateNotEmpty(email, 'Email');
     validateNotEmpty(password, 'Password');
 
-    // Check if user already exists
-    const existing = await User.findOne({ where: { username } });
-    if (existing) {
+    // Validate email format
+    validateEmail(email);
+
+    // Validate password strength
+    validatePasswordStrength(password);
+
+    // Check if user already exists (by username)
+    const existingUsername = await User.findOne({ where: { username } });
+    if (existingUsername) {
       throw new AppError('Username already taken', 409, 'DUPLICATE_USERNAME');
+    }
+
+    // Check if user already exists (by email)
+    const existingEmail = await User.findOne({ where: { email } });
+    if (existingEmail) {
+      throw new AppError('Email already registered', 409, 'DUPLICATE_EMAIL');
     }
 
     // Hash password and create user

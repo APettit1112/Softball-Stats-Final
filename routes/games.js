@@ -1,7 +1,7 @@
 const express = require('express');
 const { Game } = require('../database/models');
 const AppError = require('../utils/AppError');
-const { validateResourceExists } = require('../utils/validation');
+const { validateResourceExists, validateId, validateDateFormat } = require('../utils/validation');
 const router = express.Router();
 
 /**
@@ -24,10 +24,48 @@ router.get('/', async (req, res, next) => {
 /**
  * POST /api/v1/games
  * Create a new game
+ * Required: opponent, date, location
  */
 router.post('/', async (req, res, next) => {
   try {
-    const game = await Game.create(req.body);
+    const { opponent, date, location, score } = req.body;
+
+    // Validate required fields
+    if (!opponent || !date || !location) {
+      throw new AppError(
+        'Missing required fields: opponent, date, location',
+        400,
+        'VALIDATION_ERROR'
+      );
+    }
+
+    // Validate opponent is not empty
+    if (typeof opponent !== 'string' || opponent.trim() === '') {
+      throw new AppError('Opponent must be a non-empty string', 400, 'VALIDATION_ERROR');
+    }
+
+    // Validate location is not empty
+    if (typeof location !== 'string' || location.trim() === '') {
+      throw new AppError('Location must be a non-empty string', 400, 'VALIDATION_ERROR');
+    }
+
+    // Validate date format
+    validateDateFormat(date);
+
+    // Validate score format if provided
+    if (score !== undefined && score !== null) {
+      if (typeof score !== 'string' || score.trim() === '') {
+        throw new AppError('Score must be a non-empty string', 400, 'VALIDATION_ERROR');
+      }
+    }
+
+    const game = await Game.create({
+      opponent: opponent.trim(),
+      date,
+      location: location.trim(),
+      score: score ? score.trim() : null,
+    });
+
     res.status(201).json({
       success: true,
       message: 'Game created successfully',
@@ -44,8 +82,36 @@ router.post('/', async (req, res, next) => {
  */
 router.put('/:id', async (req, res, next) => {
   try {
+    // Validate ID format
+    validateId(req.params.id, 'Game ID');
+
     const game = await Game.findByPk(req.params.id);
     validateResourceExists(game, 'Game');
+
+    const { opponent, date, location, score } = req.body;
+
+    // Validate fields if provided
+    if (opponent !== undefined) {
+      if (typeof opponent !== 'string' || opponent.trim() === '') {
+        throw new AppError('Opponent must be a non-empty string', 400, 'VALIDATION_ERROR');
+      }
+    }
+
+    if (date !== undefined) {
+      validateDateFormat(date);
+    }
+
+    if (location !== undefined) {
+      if (typeof location !== 'string' || location.trim() === '') {
+        throw new AppError('Location must be a non-empty string', 400, 'VALIDATION_ERROR');
+      }
+    }
+
+    if (score !== undefined && score !== null) {
+      if (typeof score !== 'string' || score.trim() === '') {
+        throw new AppError('Score must be a non-empty string', 400, 'VALIDATION_ERROR');
+      }
+    }
 
     await game.update(req.body);
     res.json({
@@ -64,6 +130,9 @@ router.put('/:id', async (req, res, next) => {
  */
 router.delete('/:id', async (req, res, next) => {
   try {
+    // Validate ID format
+    validateId(req.params.id, 'Game ID');
+
     const game = await Game.findByPk(req.params.id);
     validateResourceExists(game, 'Game');
 
