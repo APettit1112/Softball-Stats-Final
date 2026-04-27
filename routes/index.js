@@ -1,9 +1,12 @@
+// routes/index.js
+
 const express = require('express');
+
 const usersRoutes = require('./users');
 const playersRoutes = require('./players');
 const gamesRoutes = require('./games');
 const statsRoutes = require('./stats');
-const authRoutes = require('./auth');
+const authRoutes = require('./auth'); // make sure this file exists in /routes
 
 const { verifyToken } = require('../middleware/auth');
 const { attachUserContext } = require('../middleware/authorization');
@@ -11,12 +14,16 @@ const { attachUserContext } = require('../middleware/authorization');
 const router = express.Router();
 
 /**
- * PUBLIC
+ * ==========================
+ * PUBLIC ROUTES
+ * ==========================
  */
 router.use('/auth', authRoutes);
 
 /**
- * PROTECTED
+ * ==========================
+ * PROTECTED ROUTES
+ * ==========================
  */
 router.use(verifyToken);
 router.use(attachUserContext);

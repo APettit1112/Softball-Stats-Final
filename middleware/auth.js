@@ -1,8 +1,12 @@
+// routes/auth.js
+
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+
 const { User } = require('../database/models');
 const AppError = require('../utils/AppError');
+
 const {
   validateRequiredFields,
   validateNotEmpty,
@@ -16,68 +20,143 @@ const jwtSecret = process.env.JWT_SECRET || 'secret';
 const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '24h';
 
 /**
- * REGISTER
+ * POST /api/v1/auth/register
  */
 router.post('/register', async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
 
     validateRequiredFields(req.body, ['username', 'email', 'password']);
-    validateNotEmpty(username);
+
+    validateNotEmpty(username, 'Username');
+    validateNotEmpty(email, 'Email');
+    validateNotEmpty(password, 'Password');
+
     validateEmail(email);
     validatePasswordStrength(password);
 
-    const existing = await User.findOne({ where: { email } });
-    if (existing) {
-      throw new AppError('Email already exists', 409);
+    const existingEmail = await User.findOne({
+      where: { email },
+    });
+
+    if (existingEmail) {
+      throw new AppError(
+        'Email already exists',
+        409,
+        'DUPLICATE_EMAIL'
+      );
     }
 
-    const hashed = await bcrypt.hash(password, 10);
+    const existingUsername = await User.findOne({
+      where: { username },
+    });
+
+    if (existingUsername) {
+      throw new AppError(
+        'Username already exists',
+        409,
+        'DUPLICATE_USERNAME'
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create({
       username,
       email,
-      password: hashed,
+      password: hashedPassword,
       role: 'user',
     });
 
     res.status(201).json({
       success: true,
-      message: 'User registered',
-      data: user,
+      message: 'User registered successfully',
+      data: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
 });
 
 /**
- * LOGIN
+ * POST /api/v1/auth/login
  */
 router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ where: { email } });
-    if (!user) throw new AppError('Invalid credentials', 401);
+    validateRequiredFields(req.body, ['email', 'password']);
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) throw new AppError('Invalid credentials', 401);
+    validateNotEmpty(email, 'Email');
+    validateNotEmpty(password, 'Password');
+
+    const user = await User.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new AppError(
+        'Invalid credentials',
+        401,
+        'INVALID_CREDENTIALS'
+      );
+    }
+
+    const passwordMatch = await bcrypt.compare(
+      password,
+      user.password
+    );
+
+    if (!passwordMatch) {
+      throw new AppError(
+        'Invalid credentials',
+        401,
+        'INVALID_CREDENTIALS'
+      );
+    }
 
     const token = jwt.sign(
-      { id: user.id, role: user.role },
+      {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+      },
       jwtSecret,
       { expiresIn: jwtExpiresIn }
     );
 
     res.json({
       success: true,
-      token,
-      user,
+      message: 'Login successful',
+      data: {
+        token,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+        },
+      },
     });
-  } catch (err) {
-    next(err);
+  } catch (error) {
+    next(error);
   }
+});
+
+/**
+ * POST /api/v1/auth/logout
+ * JWT logout is handled client-side
+ */
+router.post('/logout', (req, res) => {
+  res.json({
+    success: true,
+    message: 'Logout successful. Remove token on client side.',
+  });
 });
 
 module.exports = router;
