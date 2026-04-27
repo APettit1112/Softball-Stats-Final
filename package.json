@@ -8,7 +8,9 @@
     "start": "node server.js",
     "setup": "node database/db.js",
     "seed": "node database/seed.js",
-    "test": "jest --runInBand --detectOpenHandles --forceExit"
+    "test": "jest --runInBand --detectOpenHandles --forceExit",
+    "dev": "node server.js",
+    "build": "echo 'No build step required for Node.js'"
   },
   "engines": {
     "node": "18.x"

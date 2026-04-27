@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: softball-stats-api
+    env: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: DB_NAME
+        value: softball.db
+      - key: JWT_SECRET
+        scope: run
+      - key: JWT_EXPIRES_IN
+        value: 24h

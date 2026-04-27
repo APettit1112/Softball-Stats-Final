@@ -1,0 +1,1246 @@
+{
+  "info": {
+    "name": "Softball Stats API",
+    "description": "Comprehensive REST API for managing softball team data, including players, games, and player statistics with JWT authentication and role-based access control.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "description": "Public endpoints for user registration, login, and logout",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"john_doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user account.\n\n**Authentication:** Not required (Public)\n**Response Status:** 201 Created\n\n**Validation Rules:**\n- username: Required, unique\n- email: Required, valid email format, unique\n- password: Min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special char"
+          },
+          "response": [
+            {
+              "name": "201 - User Registered",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"username\": \"john_doe\", \"email\": \"john@example.com\", \"password\": \"SecurePassword123!\"}"
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/auth/register",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "auth", "register"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User registered successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"username\": \"john_doe\",\n    \"email\": \"john@example.com\",\n    \"role\": \"user\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticate a user and receive a JWT token.\n\n**Authentication:** Not required (Public)\n**Response Status:** 200 OK\n\n**Token Usage:** Include in Authorization header as: `Bearer <token>`"
+          },
+          "response": [
+            {
+              "name": "200 - Login Successful",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": \"john@example.com\", \"password\": \"SecurePassword123!\"}"
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/auth/login",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwIdXNlcm5hbWUiOiJqb2huX2RvZSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNjE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c\",\n    \"user\": {\n      \"id\": 1,\n      \"username\": \"john_doe\",\n      \"email\": \"john@example.com\",\n      \"role\": \"user\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout the current user. Token removal is handled client-side.\n\n**Authentication:** Required\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Logout Successful",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/auth/logout",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "auth", "logout"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Logout successful. Remove token on client side.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Players",
+      "description": "CRUD operations for player records (Protected - All authenticated users)",
+      "item": [
+        {
+          "name": "Get All Players",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players?page=1&limit=10&search=&sortBy=createdAt&sortOrder=DESC",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Records per page"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search by name or position"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt",
+                  "description": "Field to sort by"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "DESC",
+                  "description": "ASC or DESC"
+                }
+              ]
+            },
+            "description": "Retrieve all players with pagination, search, and sorting.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Players Retrieved",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/players",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "players"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"John Smith\",\n      \"position\": \"Pitcher\",\n      \"number\": 12,\n      \"createdAt\": \"2026-04-20T10:00:00Z\",\n      \"updatedAt\": \"2026-04-20T10:00:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 10,\n    \"pages\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Player by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "1"]
+            },
+            "description": "Retrieve a specific player by ID.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Player Retrieved",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/players/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "players", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"John Smith\",\n    \"position\": \"Pitcher\",\n    \"number\": 12,\n    \"createdAt\": \"2026-04-20T10:00:00Z\",\n    \"updatedAt\": \"2026-04-20T10:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Player",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Smith\",\n  \"position\": \"Pitcher\",\n  \"number\": 12\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/players",
+              "host": ["{{baseUrl}}"],
+              "path": ["players"]
+            },
+            "description": "Create a new player record.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 201 Created\n\n**Validation Rules:**\n- name: Required, non-empty string\n- position: Required, non-empty string\n- number: Required, integer 1-999"
+          },
+          "response": [
+            {
+              "name": "201 - Player Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"name\": \"John Smith\", \"position\": \"Pitcher\", \"number\": 12}"
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/players",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "players"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Player created successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"John Smith\",\n    \"position\": \"Pitcher\",\n    \"number\": 12,\n    \"createdAt\": \"2026-04-20T10:00:00Z\",\n    \"updatedAt\": \"2026-04-20T10:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Player",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Smith Updated\",\n  \"position\": \"Outfield\",\n  \"number\": 13\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/players/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "1"]
+            },
+            "description": "Update a player record.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Player Updated",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"position\": \"Outfield\"}"
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/players/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "players", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Player updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"name\": \"John Smith Updated\",\n    \"position\": \"Outfield\",\n    \"number\": 13,\n    \"createdAt\": \"2026-04-20T10:00:00Z\",\n    \"updatedAt\": \"2026-04-20T10:00:01Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Player",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/players/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["players", "1"]
+            },
+            "description": "Delete a player record.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Player Deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/players/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "players", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Player deleted successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Games",
+      "description": "CRUD operations for game records (Protected - All authenticated users)",
+      "item": [
+        {
+          "name": "Get All Games",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/games?page=1&limit=10&search=&sortBy=date&sortOrder=DESC",
+              "host": ["{{baseUrl}}"],
+              "path": ["games"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                },
+                {
+                  "key": "sortBy",
+                  "value": "date"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "DESC"
+                }
+              ]
+            },
+            "description": "Retrieve all games with pagination, search, and sorting.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Games Retrieved",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/games",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "games"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"opponent\": \"Tigers\",\n      \"date\": \"2026-04-20\",\n      \"location\": \"Home Stadium\",\n      \"score\": \"5-3\",\n      \"createdAt\": \"2026-04-20T10:00:00Z\",\n      \"updatedAt\": \"2026-04-20T10:00:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 10,\n    \"pages\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Game by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/games/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["games", "1"]
+            },
+            "description": "Retrieve a specific game by ID.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Game Retrieved",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/games/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "games", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"opponent\": \"Tigers\",\n    \"date\": \"2026-04-20\",\n    \"location\": \"Home Stadium\",\n    \"score\": \"5-3\",\n    \"createdAt\": \"2026-04-20T10:00:00Z\",\n    \"updatedAt\": \"2026-04-20T10:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Game",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"opponent\": \"Tigers\",\n  \"date\": \"2026-04-20\",\n  \"location\": \"Home Stadium\",\n  \"score\": \"5-3\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/games",
+              "host": ["{{baseUrl}}"],
+              "path": ["games"]
+            },
+            "description": "Create a new game record.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 201 Created\n\n**Validation Rules:**\n- opponent: Required, non-empty string\n- date: Required, valid date format (YYYY-MM-DD)\n- location: Required, non-empty string\n- score: Optional, string format"
+          },
+          "response": [
+            {
+              "name": "201 - Game Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"opponent\": \"Tigers\", \"date\": \"2026-04-20\", \"location\": \"Home Stadium\", \"score\": \"5-3\"}"
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/games",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "games"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Game created successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"opponent\": \"Tigers\",\n    \"date\": \"2026-04-20\",\n    \"location\": \"Home Stadium\",\n    \"score\": \"5-3\",\n    \"createdAt\": \"2026-04-20T10:00:00Z\",\n    \"updatedAt\": \"2026-04-20T10:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Game",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"opponent\": \"Lions\",\n  \"date\": \"2026-04-21\",\n  \"location\": \"Away Stadium\",\n  \"score\": \"4-2\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/games/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["games", "1"]
+            },
+            "description": "Update a game record.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Game Updated",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"score\": \"4-2\"}"
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/games/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "games", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Game updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"opponent\": \"Lions\",\n    \"date\": \"2026-04-21\",\n    \"location\": \"Away Stadium\",\n    \"score\": \"4-2\",\n    \"createdAt\": \"2026-04-20T10:00:00Z\",\n    \"updatedAt\": \"2026-04-20T10:01:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Game",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/games/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["games", "1"]
+            },
+            "description": "Delete a game record.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Game Deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/games/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "games", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Game deleted successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Player Statistics",
+      "description": "CRUD operations for player statistics (Protected - All authenticated users)",
+      "item": [
+        {
+          "name": "Get All Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stats?page=1&limit=10&sortBy=createdAt&sortOrder=DESC",
+              "host": ["{{baseUrl}}"],
+              "path": ["stats"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "DESC"
+                }
+              ]
+            },
+            "description": "Retrieve all player statistics with pagination and sorting.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Stats Retrieved",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/stats",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "stats"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"playerId\": 1,\n      \"gameId\": 1,\n      \"hits\": 2,\n      \"runs\": 1,\n      \"rbis\": 3,\n      \"strikeouts\": 0,\n      \"player\": {\n        \"id\": 1,\n        \"name\": \"John Smith\",\n        \"position\": \"Pitcher\",\n        \"number\": 12\n      },\n      \"game\": {\n        \"id\": 1,\n        \"opponent\": \"Tigers\",\n        \"date\": \"2026-04-20\",\n        \"location\": \"Home Stadium\",\n        \"score\": \"5-3\"\n      },\n      \"createdAt\": \"2026-04-20T10:00:00Z\",\n      \"updatedAt\": \"2026-04-20T10:00:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 10,\n    \"pages\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Stats by Player",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stats/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["stats", "1"]
+            },
+            "description": "Retrieve all statistics for a specific player.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Player Stats Retrieved",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/stats/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "stats", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"playerId\": 1,\n      \"gameId\": 1,\n      \"hits\": 2,\n      \"runs\": 1,\n      \"rbis\": 3,\n      \"strikeouts\": 0,\n      \"player\": {...},\n      \"game\": {...},\n      \"createdAt\": \"2026-04-20T10:00:00Z\",\n      \"updatedAt\": \"2026-04-20T10:00:00Z\"\n    }\n  ],\n  \"count\": 1\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Stat Record by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stats/record/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["stats", "record", "1"]
+            },
+            "description": "Retrieve a specific stat record by ID.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Stat Record Retrieved",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/stats/record/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "stats", "record", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"playerId\": 1,\n    \"gameId\": 1,\n    \"hits\": 2,\n    \"runs\": 1,\n    \"rbis\": 3,\n    \"strikeouts\": 0,\n    \"player\": {...},\n    \"game\": {...},\n    \"createdAt\": \"2026-04-20T10:00:00Z\",\n    \"updatedAt\": \"2026-04-20T10:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Create Stat Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"playerId\": 1,\n  \"gameId\": 1,\n  \"hits\": 2,\n  \"runs\": 1,\n  \"rbis\": 3,\n  \"strikeouts\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["stats"]
+            },
+            "description": "Create a new player statistics record.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 201 Created\n\n**Validation Rules:**\n- playerId: Required, valid player ID\n- gameId: Required, valid game ID\n- hits: Optional, non-negative integer (default: 0)\n- runs: Optional, non-negative integer (default: 0)\n- rbis: Optional, non-negative integer (default: 0)\n- strikeouts: Optional, non-negative integer (default: 0)"
+          },
+          "response": [
+            {
+              "name": "201 - Stat Record Created",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"playerId\": 1, \"gameId\": 1, \"hits\": 2, \"runs\": 1, \"rbis\": 3, \"strikeouts\": 0}"
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/stats",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "stats"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Stat record created successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"playerId\": 1,\n    \"gameId\": 1,\n    \"hits\": 2,\n    \"runs\": 1,\n    \"rbis\": 3,\n    \"strikeouts\": 0,\n    \"createdAt\": \"2026-04-20T10:00:00Z\",\n    \"updatedAt\": \"2026-04-20T10:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Stat Record",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hits\": 3,\n  \"runs\": 2,\n  \"rbis\": 4,\n  \"strikeouts\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/stats/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["stats", "1"]
+            },
+            "description": "Update a player statistics record.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Stat Record Updated",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"hits\": 3, \"runs\": 2}"
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/stats/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "stats", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Stat record updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"playerId\": 1,\n    \"gameId\": 1,\n    \"hits\": 3,\n    \"runs\": 2,\n    \"rbis\": 4,\n    \"strikeouts\": 1,\n    \"createdAt\": \"2026-04-20T10:00:00Z\",\n    \"updatedAt\": \"2026-04-20T10:00:01Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Stat Record",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/stats/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["stats", "1"]
+            },
+            "description": "Delete a player statistics record.\n\n**Authentication:** Required\n**Authorization:** All authenticated users\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Stat Record Deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/stats/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "stats", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Stat record deleted successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users (Admin Only)",
+      "description": "User management endpoints with admin-only access",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&limit=10&search=",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Get all users (Admin only).\n\n**Authentication:** Required\n**Authorization:** Admin role only\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - Users Retrieved",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (admin token)"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/users",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "users"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"username\": \"john_doe\",\n      \"email\": \"john@example.com\",\n      \"role\": \"user\",\n      \"createdAt\": \"2026-04-20T10:00:00Z\"\n    }\n  ],\n  \"pagination\": {\n    \"total\": 1,\n    \"page\": 1,\n    \"limit\": 10,\n    \"pages\": 1\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1"]
+            },
+            "description": "Get a specific user by ID. Users can view their own profile; admins can view any profile.\n\n**Authentication:** Required\n**Authorization:** User (own profile) or Admin (any profile)\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - User Retrieved",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/users/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "users", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": 1,\n    \"username\": \"john_doe\",\n    \"email\": \"john@example.com\",\n    \"role\": \"user\",\n    \"createdAt\": \"2026-04-20T10:00:00Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"john_doe_updated\",\n  \"email\": \"john_updated@example.com\",\n  \"password\": \"NewSecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1"]
+            },
+            "description": "Update user profile. Users can update their own profile; admins can update any user.\n\n**Authentication:** Required\n**Authorization:** User (own profile) or Admin (any profile)\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - User Updated",
+              "originalRequest": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\"email\": \"john_updated@example.com\"}"
+                },
+                "url": {
+                  "raw": "http://localhost:3000/api/users/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "users", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"username\": \"john_doe_updated\",\n    \"email\": \"john_updated@example.com\",\n    \"role\": \"user\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{admin_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "1"]
+            },
+            "description": "Delete a user account (Admin only).\n\n**Authentication:** Required\n**Authorization:** Admin role only\n**Response Status:** 200 OK"
+          },
+          "response": [
+            {
+              "name": "200 - User Deleted",
+              "originalRequest": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (admin token)"
+                  }
+                ],
+                "url": {
+                  "raw": "http://localhost:3000/api/users/1",
+                  "protocol": "http",
+                  "host": ["localhost"],
+                  "port": "3000",
+                  "path": ["api", "users", "1"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User deleted successfully\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "your_jwt_token_here",
+      "type": "string",
+      "description": "JWT token received from login endpoint"
+    },
+    {
+      "key": "admin_token",
+      "value": "your_admin_jwt_token_here",
+      "type": "string",
+      "description": "JWT token for admin user"
+    }
+  ]
+}
