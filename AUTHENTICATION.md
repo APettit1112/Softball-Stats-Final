@@ -1,6 +1,6 @@
 # Authentication Implementation Guide
 
-## ✅ Implementation Status
+## Implementation Status
 
 ### b. Registration Route ✓
 **Endpoint:** `POST /api/v1/auth/register`
@@ -16,13 +16,13 @@
 ```
 
 **Features:**
-- ✅ Username validation (required, non-empty)
-- ✅ Email validation (required, format check)
-- ✅ Password validation (required, min 6 characters)
-- ✅ Password hashing with bcrypt (10 salt rounds)
-- ✅ Duplicate username prevention
-- ✅ Duplicate email prevention
-- ✅ Saves to database
+- Username validation (required, non-empty)
+-  Email validation (required, format check)
+-  Password validation (required, min 6 characters)
+-  Password hashing with bcrypt (10 salt rounds)
+-  Duplicate username prevention
+-  Duplicate email prevention
+-  Saves to database
 
 **Response (201 Created):**
 ```json
@@ -57,11 +57,11 @@
 ```
 
 **Features:**
-- ✅ Username/password validation (required fields)
-- ✅ User lookup by username
-- ✅ Password verification with bcrypt.compare()
-- ✅ JWT token generation
-- ✅ Token expires in 24 hours (configurable)
+-  Username/password validation (required fields)
+-  User lookup by username
+-  Password verification with bcrypt.compare()
+-  JWT token generation
+-  Token expires in 24 hours (configurable)
 
 **Response (200 OK):**
 ```json
@@ -90,11 +90,11 @@
 **Location:** `middleware/auth.js`
 
 **verifyToken Middleware:**
-- ✅ Checks Authorization header for Bearer token
-- ✅ Validates JWT signature
-- ✅ Decodes token and extracts user data
-- ✅ Handles token expiration
-- ✅ Attaches user to `req.user`
+-  Checks Authorization header for Bearer token
+-  Validates JWT signature
+-  Decodes token and extracts user data
+-  Handles token expiration
+-  Attaches user to `req.user`
 
 **Usage:**
 ```javascript
@@ -262,16 +262,15 @@ curl -X GET http://localhost:3000/api/v1/players
 
 ## Security Features Implemented
 
-✅ Password hashing with bcrypt (10 salt rounds)
-✅ JWT token-based authentication
-✅ Token expiration (24 hours)
-✅ Email format validation
-✅ Password strength requirements (min 6 characters)
-✅ Duplicate user prevention
-✅ Secure password comparison
-✅ Protected routes via middleware
-✅ Role-based access control ready (requireRole middleware)
-✅ Error handling without exposing sensitive data
+ Password hashing with bcrypt (10 salt rounds)
+ JWT token-based authentication
+ Token expiration (24 hours)
+ Email format validation
+ Password strength requirements (min 6 characters)
+ Duplicate user prevention
+ Secure password comparison
+ Protected routes via middleware Role-based access control ready (requireRole middleware)
+ Error handling without exposing sensitive data
 
 ---
 
