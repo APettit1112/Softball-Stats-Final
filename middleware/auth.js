@@ -1,66 +1,83 @@
+const express = require('express');
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { User } = require('../database/models');
 const AppError = require('../utils/AppError');
+const {
+  validateRequiredFields,
+  validateNotEmpty,
+  validateEmail,
+  validatePasswordStrength,
+} = require('../utils/validation');
+
+const router = express.Router();
 
 const jwtSecret = process.env.JWT_SECRET || 'secret';
+const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '24h';
 
 /**
- * Middleware to verify JWT token
- * Checks for token in Authorization header (Bearer token)
+ * REGISTER
  */
-const verifyToken = (req, res, next) => {
-  // ============================================
-  // TEST MODE BYPASS (FIX FOR JEST)
-  // ============================================
-  if (process.env.NODE_ENV === 'test') {
-    req.user = {
-      id: 1,
-      username: 'testuser',
-      role: 'admin',
-    };
-    return next();
-  }
-
-  const token = req.headers.authorization?.split(' ')[1];
-
-  if (!token) {
-    return next(
-      new AppError('No token provided. Please authenticate.', 401, 'NO_TOKEN')
-    );
-  }
-
+router.post('/register', async (req, res, next) => {
   try {
-    const decoded = jwt.verify(token, jwtSecret);
-    req.user = decoded;
-    next();
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return next(new AppError('Token has expired', 401, 'TOKEN_EXPIRED'));
+    const { username, email, password } = req.body;
+
+    validateRequiredFields(req.body, ['username', 'email', 'password']);
+    validateNotEmpty(username);
+    validateEmail(email);
+    validatePasswordStrength(password);
+
+    const existing = await User.findOne({ where: { email } });
+    if (existing) {
+      throw new AppError('Email already exists', 409);
     }
 
-    return next(new AppError('Invalid token', 401, 'INVALID_TOKEN'));
+    const hashed = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      username,
+      email,
+      password: hashed,
+      role: 'user',
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'User registered',
+      data: user,
+    });
+  } catch (err) {
+    next(err);
   }
-};
+});
 
 /**
- * Middleware to check user role
- * Usage: requireRole('admin')
+ * LOGIN
  */
-const requireRole = (role) => {
-  return (req, res, next) => {
-    if (!req.user || req.user.role !== role) {
-      return next(
-        new AppError(
-          `Access denied. ${role} role required.`,
-          403,
-          'INSUFFICIENT_PERMISSIONS'
-        )
-      );
-    }
-    next();
-  };
-};
+router.post('/login', async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
 
-module.exports = {
-  verifyToken,
-  requireRole,
-};
+    const user = await User.findOne({ where: { email } });
+    if (!user) throw new AppError('Invalid credentials', 401);
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) throw new AppError('Invalid credentials', 401);
+
+    const token = jwt.sign(
+      { id: user.id, role: user.role },
+      jwtSecret,
+      { expiresIn: jwtExpiresIn }
+    );
+
+    res.json({
+      success: true,
+      token,
+      user,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+module.exports = router;

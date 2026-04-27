@@ -1,11 +1,5 @@
 const AppError = require('../utils/AppError');
 
-/**
- * Role-Based Access Control (RBAC) Middleware
- * Defines permissions for different user roles
- */
-
-// Define role permissions
 const ROLE_PERMISSIONS = {
   admin: {
     canViewAllUsers: true,
@@ -26,8 +20,7 @@ const ROLE_PERMISSIONS = {
 };
 
 /**
- * Middleware to check if user has a specific role
- * @param {String|Array} requiredRole - Role(s) required to access the route
+ * Role check middleware
  */
 const requireRole = (requiredRole) => {
   return (req, res, next) => {
@@ -35,10 +28,11 @@ const requireRole = (requiredRole) => {
       return next(new AppError('User not authenticated', 401, 'NOT_AUTHENTICATED'));
     }
 
-    const userRole = req.user.role;
-    const rolesArray = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+    const rolesArray = Array.isArray(requiredRole)
+      ? requiredRole
+      : [requiredRole];
 
-    if (!rolesArray.includes(userRole)) {
+    if (!rolesArray.includes(req.user.role)) {
       return next(
         new AppError(
           `Access denied. Required role(s): ${rolesArray.join(', ')}`,
@@ -53,24 +47,26 @@ const requireRole = (requiredRole) => {
 };
 
 /**
- * Middleware to check if user owns a resource
- * @param {String} resourceUserId - The ID of the user who owns the resource
+ * Ownership check (user can only access own data unless admin)
  */
 const requireOwnership = (req, res, next) => {
   if (!req.user) {
     return next(new AppError('User not authenticated', 401, 'NOT_AUTHENTICATED'));
   }
 
-  // Allow if user is admin
-  if (req.user.role === 'admin') {
-    return next();
+  // admin override
+  if (req.user.role === 'admin') return next();
+
+  const resourceUserId =
+    req.params.userId || req.body.userId || req.query.userId;
+
+  if (!resourceUserId) {
+    return next(new AppError('Missing resource ownership info', 400, 'NO_RESOURCE_ID'));
   }
 
-  // Check if user owns the resource
-  const resourceUserId = req.params.userId || req.body.userId;
   if (parseInt(resourceUserId) !== req.user.id) {
     return next(
-      new AppError('You can only manage your own records', 403, 'NOT_RESOURCE_OWNER')
+      new AppError('You can only access your own resources', 403, 'NOT_OWNER')
     );
   }
 
@@ -78,8 +74,7 @@ const requireOwnership = (req, res, next) => {
 };
 
 /**
- * Check if user has specific permission
- * @param {String} permission - Permission key
+ * Permission-based middleware
  */
 const hasPermission = (permission) => {
   return (req, res, next) => {
@@ -87,10 +82,11 @@ const hasPermission = (permission) => {
       return next(new AppError('User not authenticated', 401, 'NOT_AUTHENTICATED'));
     }
 
-    const userPermissions = ROLE_PERMISSIONS[req.user.role] || {};
-    if (!userPermissions[permission]) {
+    const permissions = ROLE_PERMISSIONS[req.user.role] || {};
+
+    if (!permissions[permission]) {
       return next(
-        new AppError('You do not have permission to perform this action', 403, 'PERMISSION_DENIED')
+        new AppError('Permission denied', 403, 'PERMISSION_DENIED')
       );
     }
 
@@ -99,7 +95,7 @@ const hasPermission = (permission) => {
 };
 
 /**
- * Attach role and permissions to request for easier access in routes
+ * Attach role context
  */
 const attachUserContext = (req, res, next) => {
   if (req.user) {

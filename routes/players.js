@@ -12,11 +12,6 @@ const {
 
 const router = express.Router();
 
-/**
- * GET /api/v1/players
- * Retrieve all players with pagination, filtering, and sorting
- * Query params: page, limit, search, sortBy, sortOrder
- */
 router.get('/', async (req, res, next) => {
   try {
     const { search, sortBy = 'createdAt', sortOrder = 'DESC' } = req.query;
@@ -41,10 +36,6 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-/**
- * GET /api/v1/players/:id
- * Retrieve a specific player by ID
- */
 router.get('/:id', async (req, res, next) => {
   try {
     validateId(req.params.id, 'Player ID');
@@ -52,20 +43,12 @@ router.get('/:id', async (req, res, next) => {
     const player = await Player.findByPk(req.params.id);
     validateResourceExists(player, 'Player');
 
-    res.json({
-      success: true,
-      data: player,
-    });
+    res.json({ success: true, data: player });
   } catch (error) {
     next(error);
   }
 });
 
-/**
- * POST /api/v1/players
- * Create a new player
- * Required: name, position, number
- */
 router.post('/', async (req, res, next) => {
   try {
     const { name, position, number } = req.body;
@@ -78,27 +61,11 @@ router.post('/', async (req, res, next) => {
       );
     }
 
-    if (typeof name !== 'string' || name.trim() === '') {
-      throw new AppError(
-        'Player name must be a non-empty string',
-        400,
-        'VALIDATION_ERROR'
-      );
-    }
-
-    if (typeof position !== 'string' || position.trim() === '') {
-      throw new AppError(
-        'Position must be a non-empty string',
-        400,
-        'VALIDATION_ERROR'
-      );
-    }
-
     const playerNumber = parseInt(number, 10);
 
     if (isNaN(playerNumber) || playerNumber <= 0 || playerNumber > 999) {
       throw new AppError(
-        'Player number must be a positive integer between 1 and 999',
+        'Player number must be between 1 and 999',
         400,
         'VALIDATION_ERROR'
       );
@@ -108,10 +75,6 @@ router.post('/', async (req, res, next) => {
       name: name.trim(),
       position: position.trim(),
       number: playerNumber,
-      jerseyNumber: {
-        type: DataTypes.INTEGER,
-        allowNull: true
-}
     });
 
     res.status(201).json({
@@ -124,10 +87,6 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-/**
- * PUT /api/v1/players/:id
- * Update a player
- */
 router.put('/:id', async (req, res, next) => {
   try {
     validateId(req.params.id, 'Player ID');
@@ -139,41 +98,11 @@ router.put('/:id', async (req, res, next) => {
 
     const updateData = {};
 
-    if (name !== undefined) {
-      if (typeof name !== 'string' || name.trim() === '') {
-        throw new AppError(
-          'Player name must be a non-empty string',
-          400,
-          'VALIDATION_ERROR'
-        );
-      }
-
-      updateData.name = name.trim();
-    }
-
-    if (position !== undefined) {
-      if (typeof position !== 'string' || position.trim() === '') {
-        throw new AppError(
-          'Position must be a non-empty string',
-          400,
-          'VALIDATION_ERROR'
-        );
-      }
-
-      updateData.position = position.trim();
-    }
+    if (name !== undefined) updateData.name = name.trim();
+    if (position !== undefined) updateData.position = position.trim();
 
     if (number !== undefined) {
       const playerNumber = parseInt(number, 10);
-
-      if (isNaN(playerNumber) || playerNumber <= 0 || playerNumber > 999) {
-        throw new AppError(
-          'Player number must be a positive integer between 1 and 999',
-          400,
-          'VALIDATION_ERROR'
-        );
-      }
-
       updateData.number = playerNumber;
     }
 
@@ -189,10 +118,6 @@ router.put('/:id', async (req, res, next) => {
   }
 });
 
-/**
- * DELETE /api/v1/players/:id
- * Delete a player
- */
 router.delete('/:id', async (req, res, next) => {
   try {
     validateId(req.params.id, 'Player ID');
@@ -205,7 +130,6 @@ router.delete('/:id', async (req, res, next) => {
     res.json({
       success: true,
       message: 'Player deleted successfully',
-      data: { id: req.params.id },
     });
   } catch (error) {
     next(error);

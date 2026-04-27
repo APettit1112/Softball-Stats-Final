@@ -1,12 +1,30 @@
 const { sequelize, User, Player, Game, PlayerStats } = require('./models');
+const bcrypt = require('bcrypt');
 
 async function seed() {
   await sequelize.sync({ force: true });
 
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
   const users = await User.bulkCreate([
-    { username: 'coach', email: 'coach@example.com', password: 'password123', role: 'admin' },
-    { username: 'assistant', email: 'assistant@example.com', password: 'password123', role: 'user' },
-    { username: 'statkeeper', email: 'stats@example.com', password: 'password123', role: 'user' },
+    {
+      username: 'coach',
+      email: 'coach@example.com',
+      password: hashedPassword,
+      role: 'admin',
+    },
+    {
+      username: 'assistant',
+      email: 'assistant@example.com',
+      password: hashedPassword,
+      role: 'user',
+    },
+    {
+      username: 'statkeeper',
+      email: 'stats@example.com',
+      password: hashedPassword,
+      role: 'user',
+    },
   ]);
 
   const players = await Player.bulkCreate([
@@ -27,19 +45,11 @@ async function seed() {
     { playerId: players[1].id, gameId: games[0].id, hits: 1, runs: 0, RBIs: 1, errors: 1 },
     { playerId: players[2].id, gameId: games[0].id, hits: 3, runs: 2, RBIs: 2, errors: 0 },
     { playerId: players[3].id, gameId: games[0].id, hits: 0, runs: 0, RBIs: 0, errors: 0 },
-    { playerId: players[0].id, gameId: games[1].id, hits: 1, runs: 1, RBIs: 0, errors: 0 },
-    { playerId: players[1].id, gameId: games[1].id, hits: 2, runs: 1, RBIs: 1, errors: 0 },
-    { playerId: players[2].id, gameId: games[1].id, hits: 1, runs: 0, RBIs: 0, errors: 1 },
-    { playerId: players[3].id, gameId: games[1].id, hits: 2, runs: 1, RBIs: 1, errors: 0 },
-    { playerId: players[0].id, gameId: games[2].id, hits: 3, runs: 2, RBIs: 3, errors: 0 },
-    { playerId: players[1].id, gameId: games[2].id, hits: 0, runs: 0, RBIs: 0, errors: 0 },
-    { playerId: players[2].id, gameId: games[2].id, hits: 2, runs: 1, RBIs: 2, errors: 0 },
-    { playerId: players[3].id, gameId: games[2].id, hits: 1, runs: 1, RBIs: 0, errors: 1 },
   ];
 
   await PlayerStats.bulkCreate(statsData);
 
-  console.log('✅ Database seeded successfully');
+  console.log('Database seeded successfully');
   process.exit(0);
 }
 
